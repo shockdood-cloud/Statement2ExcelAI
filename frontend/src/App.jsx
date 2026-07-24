@@ -2,79 +2,90 @@ import React, { useState } from "react";
 
 function App() {
   const [file, setFile] = useState(null);
+  const [message, setMessage] = useState("");
+
+  const convertPDF = async () => {
+    if (!file) {
+      setMessage("Please select a PDF first");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch(
+        "http://localhost:8000/convert",
+        {
+          method: "POST",
+          body: formData
+        }
+      );
+
+      const data = await response.json();
+
+      setMessage(
+        "Success: " + data.status
+      );
+
+    } catch (error) {
+      setMessage(
+        "Backend connection failed"
+      );
+    }
+  };
+
 
   return (
     <div style={{
-      minHeight: "100vh",
-      background: "#f5f7fb",
-      padding: "40px",
-      fontFamily: "Arial"
+      minHeight:"100vh",
+      background:"#f5f7fb",
+      padding:"40px",
+      fontFamily:"Arial"
     }}>
 
       <div style={{
-        maxWidth: "600px",
-        margin: "auto",
-        background: "white",
-        padding: "30px",
-        borderRadius: "15px",
-        textAlign: "center",
-        boxShadow: "0 5px 20px rgba(0,0,0,0.1)"
+        maxWidth:"600px",
+        margin:"auto",
+        background:"white",
+        padding:"30px",
+        borderRadius:"15px",
+        textAlign:"center"
       }}>
 
         <h1>📄 Statement2Excel AI</h1>
 
         <p>
-          Convert Bank PDF Statements into Excel automatically
+          Convert Bank PDF Statement to Excel
         </p>
-
-        <hr />
-
-        <h3>Upload PDF Statement</h3>
 
         <input
           type="file"
           accept=".pdf"
-          onChange={(e) => setFile(e.target.files[0])}
+          onChange={(e)=>setFile(e.target.files[0])}
         />
 
-        <br /><br />
+        <br/><br/>
 
-        {file && (
-          <p>
-            ✅ Selected: {file.name}
-          </p>
-        )}
-
-        <button style={{
-          background: "#2563eb",
-          color: "white",
-          padding: "12px 25px",
-          border: "none",
-          borderRadius: "8px",
-          cursor: "pointer",
-          fontSize: "16px"
-        }}>
+        <button
+          onClick={convertPDF}
+          style={{
+            padding:"12px 25px",
+            background:"#2563eb",
+            color:"white",
+            border:"none",
+            borderRadius:"8px"
+          }}
+        >
           Convert PDF
         </button>
 
-        <br /><br />
-
-        <button style={{
-          background: "#16a34a",
-          color: "white",
-          padding: "12px 25px",
-          border: "none",
-          borderRadius: "8px",
-          cursor: "pointer",
-          fontSize: "16px"
-        }}>
-          Download Excel
-        </button>
+        <p>{message}</p>
 
       </div>
 
     </div>
   );
 }
- 
+
 export default App;
