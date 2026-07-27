@@ -7,50 +7,45 @@ import uuid
 
 app = FastAPI()
 
-OUTPUT_FOLDER = "../outputs"
+OUTPUT_FOLDER = "outputs"
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 
 @app.get("/")
 def home():
-    return {
-        "message": "Statement2Excel AI Backend Running"
-    }
+    return {"message": "Statement2Excel AI Backend Running"}
 
 
 @app.post("/convert")
 async def convert_pdf(file: UploadFile = File(...)):
-    pdf_path = f"/tmp/{uuid.uuid4()}.pdf"
+
+    pdf_path = f"temp_{uuid.uuid4()}.pdf"
 
     with open(pdf_path, "wb") as f:
         f.write(await file.read())
 
-    transactions = []
+    rows = []
 
     with pdfplumber.open(pdf_path) as pdf:
         for page in pdf.pages:
             text = page.extract_text()
 
-            if text:
-                lines = text.split("\n")
+            if not text:
+                continue
 
-                for line in lines:
-                    transactions.append([line])
+            for line in text.split("\n"):
+                rows.append({"Text": line})
 
-    df = pd.DataFrame(transactions, columns=["Description"])
+    excel_path = os.path.join(
+        OUTPUT_FOLDER,
+        f"{uuid.uuid4()}.xlsx"
+    )
 
-    output_file = f"{OUTPUT_FOLDER}/statement.xlsx"
-    df.to_excel(output_file, index=False)
+    pd.DataFrame(rows).to_excel(excel_path, index=False)
 
-    return {
-        "message": "Excel created successfully",
-        "file": "statement.xlsx"
-    }
+    os.remove(pdf_path)
 
-
-@app.get("/download")
-def download():
     return FileResponse(
-        f"{OUTPUT_FOLDER}/statement.xlsx",
+        excel_path,
         filename="statement.xlsx"
     )
