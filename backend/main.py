@@ -8,7 +8,6 @@ import uuid
 app = FastAPI()
 
 OUTPUT_FOLDER = "../outputs"
-
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 
@@ -17,49 +16,39 @@ def home():
     return {"message": "Statement2Excel AI Backend Running"}
 
 
-@app.post("/convert")
-async def convert_pdf(file: UploadFile = File(...)):
+    @app.post("/convert")
+    async def convert_pdf(file: UploadFile = File(...)):
+        pdf_path = f"/tmp/{uuid.uuid4()}.pdf"
 
-    pdf_path = f"/tmp/{uuid.uuid4()}.pdf"
+            with open(pdf_path, "wb") as f:
+                    f.write(await file.read())
 
-    with open(pdf_path, "wb") as f:
-        f.write(await file.read())
+                        transactions = []
 
-    transactions = []
+                            with pdfplumber.open(pdf_path) as pdf:
+                                    for page in pdf.pages:
+                                                text = page.extract_text()
 
-    with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            text = page.extract_text()
+                                                            if text:
+                                                                            lines = text.split("\n")
 
-            if text:
-                lines = text.split("\n")
+                                                                                            for line in lines:
+                                                                                                                transactions.append([line])
 
-                for line in lines:
-                    transactions.append([line])
+                                                                                                                    df = pd.DataFrame(transactions, columns=["Description"])
 
+                                                                                                                        output_file = f"{OUTPUT_FOLDER}/statement.xlsx"
+                                                                                                                            df.to_excel(output_file, index=False)
 
-    df = pd.DataFrame(
-        transactions,
-        columns=["Description"]
-    )
-
-    output_file = f"{OUTPUT_FOLDER}/statement.xlsx"
-
-    df.to_excel(
-        output_file,
-        index=False
-    )
-
-    return {
-        "message": "Excel created successfully",
-        "file": "statement.xlsx"
-    }
+                                                                                                                                return {
+                                                                                                                                        "message": "Excel created successfully",
+                                                                                                                                                "file": "statement.xlsx"
+                                                                                                                                                    }
 
 
-@app.get("/download")
-def download():
-
-    return FileResponse(
-        f"{OUTPUT_FOLDER}/statement.xlsx",
-        filename="statement.xlsx"
-    )
+                                                                                                                                                    @app.get("/download")
+                                                                                                                                                    def download():
+                                                                                                                                                        return FileResponse(
+                                                                                                                                                                f"{OUTPUT_FOLDER}/statement.xlsx",
+                                                                                                                                                                        filename="statement.xlsx"
+                                                                                                                                                                            )
